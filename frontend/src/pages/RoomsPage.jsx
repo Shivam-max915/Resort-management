@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { roomService } from '../services/api';
-import { FaFilter, FaSpinner, FaStar, FaCheckCircle, FaWifi, FaTv, FaSnowflake } from 'react-icons/fa';
+import { FaFilter, FaSpinner, FaStar, FaCheckCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const RoomsPage = () => {
@@ -191,68 +191,34 @@ const RoomsPage = () => {
 
                   {/* Room Info */}
                   <div className="p-6">
-                      <h3 className="text-2xl font-bold text-dark group-hover:text-primary transition text-center mb-1">
-                        Room {room.roomNumber}
-                      </h3>
-                      <div className="flex justify-center items-center gap-2 mb-2">
-                        <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, i) => (
-                            <FaStar key={i} className={i < Math.round(room.avgRating || 0) ? 'fill-current' : 'text-gray-300'} size={14} />
-                          ))}
-                        </div>
-                        <span className="text-xs text-gray-500 font-semibold">
-                          ({room.reviewCount || 0})
-                        </span>
+                    <h3 className="text-2xl font-bold text-dark group-hover:text-primary transition text-center mb-1">
+                      Room {room.roomNumber}
+                    </h3>
+                    <div className="flex justify-center items-center gap-2 mb-2">
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, i) => (
+                          <FaStar key={i} className={i < Math.round(room.avgRating || 0) ? 'fill-current' : 'text-gray-300'} size={14} />
+                        ))}
                       </div>
-                      <p className="text-gray-500 text-sm text-center">Floor {room.floor}</p>
-                    </div>
-
-                    {/* Quick Info */}
-                    <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="font-semibold">👥</span> {room.capacity} guests
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="font-semibold">🛏️</span> {room.bedType}
-                      </div>
-                    </div>
-
-                    {/* Amenities Pills */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-1">
-                        <FaWifi size={12} /> WiFi
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-1">
-                        <FaSnowflake size={12} /> AC
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-1">
-                        <FaTv size={12} /> TV
+                      <span className="text-xs text-gray-500 font-semibold">
+                        ({room.reviewCount || 0})
                       </span>
                     </div>
-
-                    {/* Pricing Section */}
-                    <div className="bg-light p-4 rounded-xl mb-4">
-                      <p className="text-gray-600 text-sm mb-1">Starting from</p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-secondary">
-                          ₹{room.basePrice.toLocaleString('en-IN')}
-                        </span>
-                        <span className="text-gray-500 text-sm">/night</span>
+                    <p className="text-gray-500 text-sm text-center mb-4">Floor {room.floor}</p>
+                    
+                    {/* Price & Action */}
+                    <div className="border-t pt-4 flex items-center justify-between">
+                      <div>
+                        <span className="text-2xl font-bold text-primary">₹{room.price}</span>
+                        <span className="text-gray-500 text-xs"> / night</span>
                       </div>
-                      {room.discount > 0 && (
-                        <p className="text-sm text-green-600 font-semibold mt-2">
-                          💰 Save {room.discount}% on longer stays
-                        </p>
-                      )}
+                      <Link 
+                        to={`/rooms/${room._id}`}
+                        className="bg-primary text-white font-semibold py-2 px-4 rounded-lg hover:bg-opacity-95 transition"
+                      >
+                        View Details
+                      </Link>
                     </div>
-
-                    {/* Action Button */}
-                    <Link
-                      to={`/rooms/${room._id}`}
-                      className="w-full block text-center bg-primary text-white font-bold py-3 rounded-lg hover:bg-secondary transition-all hover:shadow-lg"
-                    >
-                      View Details & Book →
-                    </Link>
                   </div>
                 </div>
               ))}
