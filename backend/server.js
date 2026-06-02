@@ -36,12 +36,11 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 // Health check
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Server is running fine",
-  });
+// server.js ke andar check karo
+app.get('/', (req, res) => {
+  res.send('Backend Server is Running Successfully!');
 });
+
 
 // API Routes
 app.use("/api/auth", authRoutes);
