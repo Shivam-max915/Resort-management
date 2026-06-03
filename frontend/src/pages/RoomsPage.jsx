@@ -209,7 +209,7 @@ const RoomsPage = () => {
                     {/* Price & Action */}
                     <div className="border-t pt-4 flex items-center justify-between">
                       <div>
-                        <span className="text-2xl font-bold text-primary">₹{room.price}</span>
+                        <span className="text-2xl font-bold text-primary">₹{room.basePrice ?? room.price}</span>
                         <span className="text-gray-500 text-xs"> / night</span>
                       </div>
                       <Link 
