@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { authService } from './api';
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -12,17 +13,21 @@ export const useAuthStore = create((set) => ({
       console.error('Invalid user object - missing or invalid role');
       return;
     }
-    // Use sessionStorage only (clears when browser/tab closes)
-    sessionStorage.setItem('user', JSON.stringify(user));
+
+    const serializedUser = JSON.stringify(user);
+    sessionStorage.setItem('user', serializedUser);
     sessionStorage.setItem('token', token);
+    localStorage.setItem('user', serializedUser);
+    localStorage.setItem('token', token);
+
     set({ user, token, isAuthenticated: true });
   },
 
   logout: () => {
-    // Clear all session data immediately
+    // Clear all stored auth data immediately
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('token');
-    localStorage.removeItem('user'); // Also clear old localStorage data if exists
+    localStorage.removeItem('user');
     localStorage.removeItem('token');
     set({ user: null, token: null, isAuthenticated: false });
   },
@@ -36,14 +41,18 @@ export const useAuthStore = create((set) => ({
   // This runs on EVERY app load/refresh - no trusting client-side data
   initializeAuth: async () => {
     try {
-      const token = sessionStorage.getItem('token');
-      const userStr = sessionStorage.getItem('user');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
       
-      // If no token or user in sessionStorage, user is not authenticated
+      // If no token or user in storage, user is not authenticated
       if (!token || !userStr) {
         set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
         return;
       }
+
+      // Keep both storage layers in sync for refresh/new-tab support
+      if (!sessionStorage.getItem('token')) sessionStorage.setItem('token', token);
+      if (!sessionStorage.getItem('user')) sessionStorage.setItem('user', userStr);
       
       try {
         const user = JSON.parse(userStr);
@@ -60,56 +69,49 @@ export const useAuthStore = create((set) => ({
         // CRITICAL: ALWAYS verify token with backend on app initialization
         // This prevents unauthorized access even if someone tries to modify sessionStorage
         try {
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            credentials: 'include' // Include cookies if using them
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            const backendUser = data.user;
-            
-            // CRITICAL: Validate role matches backend
-            if (!backendUser || !backendUser.role || backendUser.role !== user.role) {
-              console.error('Role mismatch or invalid backend response - security violation');
-              sessionStorage.removeItem('user');
-              sessionStorage.removeItem('token');
-              set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
-              return;
-            }
-            
-            // CRITICAL: Validate user ID matches to prevent session hijacking
-            if (backendUser._id !== user.id) {
-              console.error('User ID mismatch - potential session hijacking attempt');
-              sessionStorage.removeItem('user');
-              sessionStorage.removeItem('token');
-              set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
-              return;
-            }
-            
-            // Token is valid - update with latest backend data
-            set({ user: backendUser, token, isAuthenticated: true, isInitialized: true });
-          } else if (response.status === 401) {
-            // Token is invalid or expired - clear auth immediately
-            console.warn('Token validation failed - clearing auth');
+          const response = await authService.getCurrentUser();
+          const backendUser = response.data.user;
+
+          // CRITICAL: Validate role matches backend
+          if (!backendUser || !backendUser.role || backendUser.role !== user.role) {
+            console.error('Role mismatch or invalid backend response - security violation');
             sessionStorage.removeItem('user');
             sessionStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
             set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
-          } else {
-            // Server error - be cautious, clear auth
-            console.error('Backend auth check failed with status:', response.status);
-            sessionStorage.removeItem('user');
-            sessionStorage.removeItem('token');
-            set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
+            return;
           }
+
+          // CRITICAL: Validate user ID matches to prevent session hijacking
+          const storedUserId = user.id || user._id;
+          const backendUserId = backendUser._id || backendUser.id;
+          if (!backendUserId || backendUserId !== storedUserId) {
+            console.error('User ID mismatch - potential session hijacking attempt');
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
+            return;
+          }
+
+          // Token is valid - update with latest backend data
+          const serializedUser = JSON.stringify(backendUser);
+          sessionStorage.setItem('user', serializedUser);
+          localStorage.setItem('user', serializedUser);
+          set({ user: backendUser, token, isAuthenticated: true, isInitialized: true });
         } catch (backendError) {
-          // Network error during validation - CRITICAL: DO NOT trust client-side data
-          console.error('Backend validation error - clearing auth:', backendError);
+          const status = backendError.response?.status;
+          if (status === 401) {
+            console.warn('Token validation failed - clearing auth');
+          } else {
+            console.error('Backend validation error - clearing auth:', backendError);
+          }
           sessionStorage.removeItem('user');
           sessionStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
           set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
         }
       } catch (parseError) {
