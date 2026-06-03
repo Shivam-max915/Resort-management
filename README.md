@@ -62,6 +62,33 @@ npm install
 npm run dev   # Runs the React development server
 ```
 
+## ☁️ Hosting
+### Backend on Render
+1. Connect this repository to Render and create a new Web Service.
+2. Set the Root Directory to `backend`.
+3. Use:
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+4. Add these environment variables in Render:
+   - `MONGO_URI` — your MongoDB Atlas connection string
+   - `JWT_SECRET` — a strong secret for JWT
+   - `JWT_EXPIRE` — e.g. `7d`
+   - `FRONTEND_URL` — `https://resort-management-kappa.vercel.app`
+
+Your Render backend URL will look like:
+`https://<your-service>.onrender.com/api`
+
+### Frontend on Vercel
+1. Deploy the `frontend` folder to Vercel.
+2. In the Vercel dashboard, add an Environment Variable:
+   - `VITE_API_URL` = `https://<your-service>.onrender.com/api`
+3. Re-deploy the frontend after setting the variable.
+
+### Notes
+- The backend already exposes API routes under `/api`.
+- Local development can continue using the default frontend proxy `VITE_API_URL` fallback to `/api`.
+- If using Atlas, ensure your IP access list allows Render's outbound IPs or use `0.0.0.0/0` during setup.
+
 ---
 
 ## 🧑‍💻 Author

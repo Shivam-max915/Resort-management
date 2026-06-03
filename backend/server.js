@@ -31,14 +31,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or curl requests)
+      // allow requests with no origin (like server-to-server calls or curl)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        // Strict dynamically accepts but fallbacks to true for easier hosting testing
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`), false);
     },
     credentials: true,
   })

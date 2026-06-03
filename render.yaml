@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: resort-management-backend
+    env: node
+    plan: starter
+    branch: main
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
